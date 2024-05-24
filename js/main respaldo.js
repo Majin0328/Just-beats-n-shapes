@@ -360,6 +360,19 @@ function initializeCircles() {
     }, 65 * intervaloAparicion1s);
 
     setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 66 * intervaloAparicion1s); // Medio
+
+    // Generar primer grupo
+/*createCirclesGroup(window_width / 2, offset, 10, 10);
+
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), intervaloAparicion * 5); 
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), intervaloAparicion * 5.1); 
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), intervaloAparicion * 5.2); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2), intervaloAparicion * 5.3); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 5.4); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 5.5); 
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 5.6); 
+
+*/
 }
 
 initializeCircles();

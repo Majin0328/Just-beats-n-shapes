@@ -12,7 +12,6 @@ let ctx = canvas.getContext("2d");
 const window_height = window.innerHeight * .80;
 const window_width = window.innerWidth * .80;
 
-// script.js
 let lastX = 0;
 let lastY = 0;
 let positions = [];
@@ -77,7 +76,6 @@ function updateScore() {
     scoreInterval = setInterval(function () {
         if (!gameOver) { // Solo aumentar el puntaje si no hay game over
             score += 10;
-            
         }
     }, 1000);
 }
@@ -119,7 +117,7 @@ function drawGameTime(context) {
 }
 
 class Circle {
-    constructor(x, y, radius, color, speed, dx, dy) {
+    constructor(x, y, radius, color, speed, dx, dy, image) {
         this.posX = x;
         this.posY = y;
         this.radius = radius;
@@ -127,13 +125,18 @@ class Circle {
         this.speed = speed;
         this.dx = dx;
         this.dy = dy;
+        this.image = image;
     }
 
     draw(context) {
         context.beginPath();
-        context.fillStyle = this.color;
-        context.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
-        context.fill();
+        if (this.image) {
+            context.drawImage(this.image, this.posX - this.radius, this.posY - this.radius, this.radius * 2, this.radius * 2);
+        } else {
+            context.fillStyle = this.color;
+            context.arc(this.posX, this.posY, this.radius, 0, Math.PI * 2, false);
+            context.fill();
+        }
         context.closePath();
     }
 
@@ -162,45 +165,45 @@ let miCirculos = [];
 
 // Ángulos de las 5 direcciones (patrón de estrella)
 const directionsEstrella = [
-    { dx: 0, dy: -1 },   // Arriba
-    { dx: 0.951, dy: -0.309 },  // Arriba derecha
-    { dx: 0.588, dy: 0.809 },   // Abajo derecha
-    { dx: -0.588, dy: 0.809 },  // Abajo izquierda
-    { dx: -0.951, dy: -0.309 }  // Arriba izquierda
+    { dx: 0, dy: -1 }, // Arriba
+    { dx: 0.951, dy: -0.309 }, // Arriba derecha
+    { dx: 0.588, dy: 0.809 }, // Abajo derecha
+    { dx: -0.588, dy: 0.809 }, // Abajo izquierda
+    { dx: -0.951, dy: -0.309 } // Arriba izquierda
 ];
 
 const directionsOctagono = [
-    { dx: 1, dy: 0 },           // Derecha
-    { dx: 0.707, dy: -0.707 },  // Arriba derecha
-    { dx: 0, dy: -1 },          // Arriba
+    { dx: 1, dy: 0 }, // Derecha
+    { dx: 0.707, dy: -0.707 }, // Arriba derecha
+    { dx: 0, dy: -1 }, // Arriba
     { dx: -0.707, dy: -0.707 }, // Arriba izquierda
-    { dx: -1, dy: 0 },          // Izquierda
-    { dx: -0.707, dy: 0.707 },  // Abajo izquierda
-    { dx: 0, dy: 1 },           // Abajo
-    { dx: 0.707, dy: 0.707 }    // Abajo derecha
+    { dx: -1, dy: 0 }, // Izquierda
+    { dx: -0.707, dy: 0.707 }, // Abajo izquierda
+    { dx: 0, dy: 1 }, // Abajo
+    { dx: 0.707, dy: 0.707 } // Abajo derecha
 ];
 
 const directionsTriangulo = [
-    { dx: 0.5, dy: -0.866 },  // Arriba derecha
-    { dx: -1, dy: 0 },        // Izquierda
-    { dx: 0.5, dy: 0.866 }    // Abajo derecha
+    { dx: 0.5, dy: -0.866 }, // Arriba derecha
+    { dx: -1, dy: 0 }, // Izquierda
+    { dx: 0.5, dy: 0.866 } // Abajo derecha
 ];
 
 const directionsCuadrado = [
-    { dx: 1, dy: 0 },  // Derecha
-    { dx: 0, dy: 1 },  // Abajo
+    { dx: 1, dy: 0 }, // Derecha
+    { dx: 0, dy: 1 }, // Abajo
     { dx: -1, dy: 0 }, // Izquierda
-    { dx: 0, dy: -1 }  // Arriba
+    { dx: 0, dy: -1 } // Arriba
 ];
 
 const directionsHexagono = [
-    { dx: 1, dy: 0 },           // Derecha
-    { dx: 0.5, dy: -0.866 },    // Arriba derecha
-    { dx: -0.5, dy: -0.866 },   // Arriba izquierda
+    { dx: 1, dy: 0 }, // Derecha
+    { dx: 0.5, dy: -0.866 }, // Arriba derecha
+    { dx: -0.5, dy: -0.866 }, // Arriba izquierda
     { dx: -1, dy: 0 },
-// Izquierda
-{ dx: -0.5, dy: 0.866 },    // Abajo izquierda
-{ dx: 0.5, dy: 0.866 }      // Abajo derecha
+    // Izquierda
+    { dx: -0.5, dy: 0.866 }, // Abajo izquierda
+    { dx: 0.5, dy: 0.866 } // Abajo derecha
 ];
 
 // Tiempo de espera entre la aparición de cada grupo de círculos (en milisegundos)
@@ -208,203 +211,240 @@ const intervaloAparicion = 2000; // 2 segundos por defecto
 const intervaloAparicion1s = 1000; // 1 segundo por defecto
 
 function createCirclesGroup(x, y, radius = 50, speed = 8) {
-for (let i = 0; i < directionsEstrella.length; i++) {
-    let direction = directionsEstrella[i];
-    let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy);
-    miCirculos.push(miCirculo);
-}
-flashScreen();
+    for (let i = 0; i < directionsEstrella.length; i++) {
+        let direction = directionsEstrella[i];
+        let img = new Image();
+        img.src = 'img/Enemy.png'; // Reemplaza 'ruta_de_tu_imagen1.jpg' con la ruta real de tu imagen
+        let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
+        miCirculos.push(miCirculo);
+    }
+    flashScreen();
 }
 
 function createCirclesGroup1(x, y, radius = 20, speed = 8) {
-for (let i = 0; i < directionsOctagono.length; i++) {
-    let direction = directionsOctagono[i];
-    let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy);
-    miCirculos.push(miCirculo);
-}
-flashScreen();
+    for (let i = 0; i < directionsOctagono.length; i++) {
+        let direction = directionsOctagono[i];
+        let img = new Image();
+        img.src = 'img/Enemy.png'; // Reemplaza 'ruta_de_tu_imagen2.jpg' con la ruta real de tu imagen
+        let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
+        miCirculos.push(miCirculo);
+    }
+    flashScreen();
 }
 
 function createCirclesGroup2(x, y, radius = 60, speed = 8) {
-for (let i = 0; i < directionsTriangulo.length; i++) {
-    let direction = directionsTriangulo[i];
-    let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy);
-    miCirculos.push(miCirculo);
-}
-flashScreen();
+    for (let i = 0; i < directionsTriangulo.length; i++) {
+        let direction = directionsTriangulo[i];
+        let img = new Image();
+        img.src = 'img/Enemy.png'; // Reemplaza 'ruta_de_tu_imagen3.jpg' con la ruta real de tu imagen
+        let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
+        miCirculos.push(miCirculo);
+    }
+    flashScreen();
 }
 
 function createCirclesGroup3(x, y, radius = 30, speed = 8) {
-for (let i = 0; i < directionsHexagono.length; i++) {
-    let direction = directionsHexagono[i];
-    let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy);
-    miCirculos.push(miCirculo);
-}
-flashScreen();
+    for (let i = 0; i < directionsHexagono.length; i++) {
+        let direction = directionsHexagono[i];
+        let img = new Image();
+        img.src = 'img/Enemy.png'; // Reemplaza 'ruta_de_tu_imagen4.jpg' con la ruta real de tu imagen
+        let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
+        miCirculos.push(miCirculo);
+    }
+    flashScreen();
 }
 
 function initializeCircles() {
-const offset = 50;
-const offset1 = 100;
+    const offset = 50;
+    const offset1 = 100;
+    setTimeout(() => {
+        createCirclesGroup1(offset, window_height - offset); // Esquina inferior izquierda
+        createCirclesGroup1(window_width - offset, offset); // Esquina superior derecha
+    }, 1 * intervaloAparicion);
+    createCirclesGroup2(window_width / 2, window_height / 2); // Medio
+    setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 2), 1 * intervaloAparicion); // Izquierda
+    setTimeout(() => createCirclesGroup2(3 * window_width / 4, window_height / 2), 2 * intervaloAparicion); // Derecha
+    // Crear grupos en las esquinas movidos un poco hacia adentro
 
-// Generar primer grupo
-createCirclesGroup(window_width / 2, offset, 10, 10);
-setTimeout(() => createCirclesGroup1(window_width / 3, offset1, 30, 10), intervaloAparicion); 
-setTimeout(() => createCirclesGroup2(window_width / 4, offset1, 15, 10), intervaloAparicion * 2); 
-setTimeout(() => createCirclesGroup3(window_width / 5, offset1, 25, 10), intervaloAparicion * 3); 
-
-setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 0 * intervaloAparicion); // Medio
-
-setTimeout(() => {
-    createCirclesGroup1(offset, window_height - offset); // Esquina inferior izquierda
-    createCirclesGroup1(window_width - offset, offset); // Esquina superior derecha
-}, 1 * intervaloAparicion);
-createCirclesGroup2(window_width / 2, window_height / 2); // Medio
+    setTimeout(() => {
+        createCirclesGroup2(offset, window_height - offset); // Esquina inferior izquierda
+        createCirclesGroup2(window_width - offset, offset); // Esquina superior derecha
+    }, 3 * intervaloAparicion);
+    setTimeout(() => {
+        createCirclesGroup2(offset, offset); // Esquina superior izquierda
+        createCirclesGroup2(window_width - offset, window_height - offset); // Esquina inferior derecha
+    }, 4 * intervaloAparicion);
+    createCirclesGroup2(window_width / 2, window_height / 2); // Medio
     setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 2), 5 * intervaloAparicion); // Izquierda
     setTimeout(() => createCirclesGroup2(3 * window_width / 4, window_height / 2), 6 * intervaloAparicion); // Derecha
 
     // Crear grupos en las esquinas movidos un poco hacia adentro
-    
-    setTimeout(() => {
-        createCirclesGroup2(offset, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup2(window_width - offset, offset); // Esquina superior derecha
-    }, 7 * intervaloAparicion);
-
-    setTimeout(() => {
-        createCirclesGroup2(offset, offset); // Esquina superior izquierda
-        createCirclesGroup2(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 8 * intervaloAparicion);
-
-    setTimeout(() => createCirclesGroup(window_width / 4, window_height / 2), 9* intervaloAparicion); // Izquierda
-    setTimeout(() => createCirclesGroup(3 * window_width / 4, window_height / 2), 9 * intervaloAparicion); // Derecha
-
-    setTimeout(() => {
-        createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
-    }, 10 * intervaloAparicion);
-
-    setTimeout(() => {
-        createCirclesGroup1(offset1, offset); // Esquina superior izquierda
-        createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 11 * intervaloAparicion);
-
-    setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 12 * intervaloAparicion); // Medio
-
-    setTimeout(() => {
-        createCirclesGroup3(offset, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup3(window_width - offset, offset); // Esquina superior derecha
-    }, 13 * intervaloAparicion);
-
-    setTimeout(() => {
-        createCirclesGroup1(offset, offset); // Esquina superior izquierda
-        createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 14 * intervaloAparicion);
-
-    setTimeout(() => createCirclesGroup(window_width / 4, window_height / 2), 15* intervaloAparicion); // Izquierda
-    setTimeout(() => createCirclesGroup(3 * window_width / 4, window_height / 2), 16 * intervaloAparicion); // Derecha
-
-    setTimeout(() => {
-        createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
-    }, 17 * intervaloAparicion);
-
-    setTimeout(() => {
-        createCirclesGroup(offset1, offset); // Esquina superior izquierda
-        createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 18 * intervaloAparicion);
-
-    setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 25 * intervaloAparicion); // Medio
 
     setTimeout(() => {
         createCirclesGroup(offset, window_height - offset); // Esquina inferior izquierda
         createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
-    }, 19 * intervaloAparicion);
-
+    }, 7 * intervaloAparicion);
     setTimeout(() => {
         createCirclesGroup(offset, offset); // Esquina superior izquierda
         createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 20 * intervaloAparicion);
+    }, 8 * intervaloAparicion);
 
-    setTimeout(() => createCirclesGroup(window_width / 4, window_height / 2), 21 * intervaloAparicion); // Izquierda
-    setTimeout(() => createCirclesGroup(3 * window_width / 4, window_height / 2), 22 * intervaloAparicion); // Derecha
+setTimeout(() => {
+    createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+}, 10 * intervaloAparicion);
 
-    setTimeout(() => {
-        createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
-    }, 23 * intervaloAparicion);
+setTimeout(() => {
+    createCirclesGroup1(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 11 * intervaloAparicion);
 
-    setTimeout(() => {
-        createCirclesGroup(offset1, offset); // Esquina superior izquierda
-        createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 24 * intervaloAparicion);
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 12 * intervaloAparicion); // Medio
 
-    setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 26 * intervaloAparicion); // Medio
+setTimeout(() => {
+    createCirclesGroup3(offset, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup3(window_width - offset, offset); // Esquina superior derecha
+}, 13 * intervaloAparicion);
 
-    setTimeout(() => {
-        createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
-    }, 42 * intervaloAparicion1s);
+setTimeout(() => {
+    createCirclesGroup1(offset, offset); // Esquina superior izquierda
+    createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 14 * intervaloAparicion);
 
-    setTimeout(() => {
-        createCirclesGroup(offset1, offset); // Esquina superior izquierda
-        createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 43 * intervaloAparicion1s);
+setTimeout(() => createCirclesGroup(window_width / 4, window_height / 2), 15* intervaloAparicion); // Izquierda
+setTimeout(() => createCirclesGroup(3 * window_width / 4, window_height / 2), 16 * intervaloAparicion); // Derecha
 
-    setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 54 * intervaloAparicion1s); // Medio
+setTimeout(() => {
+    createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+}, 17 * intervaloAparicion);
 
-    setTimeout(() => {
-        createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
-    }, 55 * intervaloAparicion1s);
+setTimeout(() => {
+    createCirclesGroup(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 18 * intervaloAparicion);
 
-    setTimeout(() => {
-        createCirclesGroup2(offset1, offset); // Esquina superior izquierda
-        createCirclesGroup2(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 56 * intervaloAparicion1s);
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 25 * intervaloAparicion); // Medio
 
-    setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 58 * intervaloAparicion1s); // Medio
+setTimeout(() => {
+    createCirclesGroup(offset, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+}, 19 * intervaloAparicion);
 
-    setTimeout(() => {
-        createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
-    }, 60 * intervaloAparicion1s);
+setTimeout(() => {
+    createCirclesGroup(offset, offset); // Esquina superior izquierda
+    createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 20 * intervaloAparicion);
 
-    setTimeout(() => {
-        createCirclesGroup1(offset1, offset); // Esquina superior izquierda
-        createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 61 * intervaloAparicion1s);
+setTimeout(() => createCirclesGroup(window_width / 4, window_height / 2), 21 * intervaloAparicion); // Izquierda
+setTimeout(() => createCirclesGroup(3 * window_width / 4, window_height / 2), 22 * intervaloAparicion); // Derecha
 
-    setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 62 * intervaloAparicion1s); // Medio
+setTimeout(() => {
+    createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+}, 23 * intervaloAparicion);
 
-    setTimeout(() => {
-        createCirclesGroup1(offset1, offset); // Esquina superior izquierda
-        createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 62 * intervaloAparicion1s);
+setTimeout(() => {
+    createCirclesGroup(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 24 * intervaloAparicion);
 
-    setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), 63 * intervaloAparicion1s); // Medio
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 26 * intervaloAparicion); // Medio
 
-    setTimeout(() => {
-        createCirclesGroup1(offset1, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup1(window_width - offset, offset); // Esquina superior derecha
-    }, 64 * intervaloAparicion1s);
+setTimeout(() => {
+    createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+}, 42 * intervaloAparicion1s);
 
-    setTimeout(() => {
-        createCirclesGroup1(offset1, offset); // Esquina superior izquierda
-        createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
-    }, 65 * intervaloAparicion1s);
+setTimeout(() => {
+    createCirclesGroup(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 43 * intervaloAparicion1s);
 
-    setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 66 * intervaloAparicion1s); // Medio
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 54 * intervaloAparicion1s); // Medio
+
+setTimeout(() => {
+    createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+}, 55 * intervaloAparicion1s);
+
+setTimeout(() => {
+    createCirclesGroup2(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup2(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 56 * intervaloAparicion1s);
+
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 58 * intervaloAparicion1s); // Medio
+
+setTimeout(() => {
+    createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+}, 60 * intervaloAparicion1s);
+
+setTimeout(() => {
+    createCirclesGroup1(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 61 * intervaloAparicion1s);
+
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 62 * intervaloAparicion1s); // Medio
+
+setTimeout(() => {
+    createCirclesGroup1(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 62 * intervaloAparicion1s);
+
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), 63 * intervaloAparicion1s); // Medio
+
+setTimeout(() => {
+    createCirclesGroup1(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup1(window_width - offset, offset); // Esquina superior derecha
+}, 64 * intervaloAparicion1s);
+
+setTimeout(() => {
+    createCirclesGroup1(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 65 * intervaloAparicion1s);
+
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 66 * intervaloAparicion1s); // Medio
+
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), intervaloAparicion * 34); 
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), intervaloAparicion * 34.1); 
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), intervaloAparicion * 34.2); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 34.3); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 34.4); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 34.5); 
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 34.6); 
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 34.7); 
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 34.8); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 34.9); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35.1); 
+
+setTimeout(() => createCirclesGroup1(window_width / 3, window_height / 4), intervaloAparicion * 35.2); 
+setTimeout(() => createCirclesGroup1(window_width / 3, window_height / 4), intervaloAparicion * 35.3); 
+setTimeout(() => createCirclesGroup1(window_width / 4, window_height / 3), intervaloAparicion * 35.4); 
+setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 3, 15, 10), intervaloAparicion * 35.5); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35.6); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35.7); 
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35.8); 
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35.9); 
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 36); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 36.1); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 36.2); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 36.3); 
+
+
+
 }
 
 initializeCircles();
 
-canvas.addEventListener("click", function(event) {
-const mouseX = event.clientX;
-const mouseY = event.clientY;
+canvas.addEventListener("click", function (event) {
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
 
-for (let i = miCirculos.length - 1; i >= 0; i--) {
-    const circulo = miCirculos[i];
-    const distanciaAlCentro = getDistance(mouseX, mouseY, circulo.posX, circulo.posY);
+    for (let i = miCirculos.length - 1; i >= 0; i--) {
+        const circulo = miCirculos[i];
+        const distanciaAlCentro = getDistance(mouseX, mouseY, circulo.posX, circulo.posY);
         if (distanciaAlCentro <= circulo.radius) {
             miCirculos.splice(i, 1);
             ctx.clearRect(0, 0, window_width, window_height);
@@ -437,7 +477,7 @@ let updateCircles = function () {
         reloadButton.style.cursor = 'pointer';
         document.body.appendChild(reloadButton);
 
-        reloadButton.addEventListener('click', function() {
+        reloadButton.addEventListener('click', function () {
             location.reload();
         });
 
@@ -493,7 +533,7 @@ playAudio();  // Iniciar la música cuando se carga la página
 
 canvas.addEventListener("mousemove", xyMouse);
 
-canvas.addEventListener("click", function(event) {
+canvas.addEventListener("click", function (event) {
     const mouseX = event.clientX;
     const mouseY = event.clientY;
 
