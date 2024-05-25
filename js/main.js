@@ -1,20 +1,20 @@
-window.onload = function () {
-    setTimeout(function () {
-        document.getElementById('onload').style.display = 'none';
-        document.body.classList.remove('hidden');
-    }, 3000); // 3000 milisegundos = 3 segundos
-};
-
 const canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
 // Obtiene las dimensiones de la pantalla actual
-const window_height = window.innerHeight * .80;
-const window_width = window.innerWidth * .80;
+const window_height = window.innerHeight * 0.80;
+const window_width = window.innerWidth * 0.80;
 
 let lastX = 0;
 let lastY = 0;
 let positions = [];
+
+var imagen = new Image();
+imagen.src = 'img/background1.jpg'; // Reemplaza esto con la ruta a tu imagen de fondo
+
+imagen.onload = function () {
+    ctx.drawImage(imagen, 0, 0, window_width, window_height); // Dibujar la imagen de fondo cuando se haya cargado
+};
 
 const trails = [
     document.getElementById('trail1'),
@@ -60,8 +60,6 @@ document.addEventListener('mousemove', function (e) {
     });
 });
 
-canvas.style.background = "black";
-
 let mouseX = 0;
 let mouseY = 0;
 
@@ -69,8 +67,17 @@ let score = 0;
 let level = 1;
 let maxScore = localStorage.getItem('maxScore') || 0;
 let gameOver = false;  // Flag to check if the game is over
+let YouWin = false;
 let scoreInterval; // Variable para almacenar el intervalo del puntaje
 
+function activateGameOverAfterTimeLimit() {
+    setTimeout(function() {
+        gameOver=true;
+        YouWin = true;
+    }, 85000); // 50 segundos expresados en milisegundos
+}
+// Al inicio del juego, después de inicializar todo
+activateGameOverAfterTimeLimit();
 // Función para actualizar el puntaje cada segundo
 function updateScore() {
     scoreInterval = setInterval(function () {
@@ -157,11 +164,63 @@ class Circle {
     }
 }
 
+class Square {
+    constructor(x, y, size, image) {
+        this.posX = x;
+        this.posY = y;
+        this.size = size;
+        this.image = image;
+        this.opacity = 0; // Inicialmente invisible
+        this.appearing = true; // Estado de aparición
+        this.disappearing = false; // Estado de desaparición
+        this.creationTime = Date.now(); // Tiempo de creación
+    }
+
+    draw(context) {
+        context.globalAlpha = this.opacity;
+        context.drawImage(this.image, this.posX, this.posY, this.size, this.size);
+        context.globalAlpha = 1.0; // Resetear la opacidad a 1
+    }
+
+    update(context) {
+        // Manejar la animación de aparición y desaparición
+        if (this.appearing) {
+            this.opacity += 0.05;
+            if (this.opacity >= 1) {
+                this.opacity = 1;
+                this.appearing = false;
+            }
+        } else if (this.disappearing) {
+            this.opacity -= 0.05;
+            if (this.opacity <= 0) {
+                this.opacity = 0;
+                this.disappearing = false;
+            }
+        }
+
+        // Verificar si han pasado 3 segundos para desaparecer
+        if (Date.now() - this.creationTime >= 3000) {
+            this.disappearing = true;
+        }
+
+        this.draw(context);
+    }
+
+    containsPoint(x, y) {
+        return x > this.posX && x < this.posX + this.size && y > this.posY && y < this.posY + this.size;
+    }
+
+    isFullyTransparent() {
+        return this.opacity <= 0;
+    }
+}
+
 function getDistance(posX1, posY1, posX2, posY2) {
     return Math.sqrt(Math.pow((posX2 - posX1), 2) + Math.pow((posY2 - posY1), 2));
 }
 
 let miCirculos = [];
+let miCuadrados = [];
 
 // Ángulos de las 5 direcciones (patrón de estrella)
 const directionsEstrella = [
@@ -206,7 +265,7 @@ const directionsHexagono = [
     { dx: 0.5, dy: 0.866 } // Abajo derecha
 ];
 
-// Tiempo de espera entre la aparición de cada grupo de círculos (en milisegundos)
+
 const intervaloAparicion = 2000; // 2 segundos por defecto
 const intervaloAparicion1s = 1000; // 1 segundo por defecto
 
@@ -214,75 +273,95 @@ function createCirclesGroup(x, y, radius = 50, speed = 8) {
     for (let i = 0; i < directionsEstrella.length; i++) {
         let direction = directionsEstrella[i];
         let img = new Image();
-        img.src = 'img/Enemy.png'; // Reemplaza 'ruta_de_tu_imagen1.jpg' con la ruta real de tu imagen
+        img.src = 'img/Enemy2.png'; // Reemplaza 'ruta_de_tu_imagen1.jpg' con la ruta real de tu imagen
         let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
         miCirculos.push(miCirculo);
     }
     flashScreen();
 }
 
-function createCirclesGroup1(x, y, radius = 20, speed = 8) {
-    for (let i = 0; i < directionsOctagono.length; i++) {
-        let direction = directionsOctagono[i];
-        let img = new Image();
-        img.src = 'img/Enemy.png'; // Reemplaza 'ruta_de_tu_imagen2.jpg' con la ruta real de tu imagen
-        let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
-        miCirculos.push(miCirculo);
+    function createCirclesGroup1(x, y, radius = 20, speed = 8) {
+        for (let i = 0; i < directionsOctagono.length; i++) {
+            let direction = directionsOctagono[i];
+            let img = new Image();
+            img.src = 'img/Enemy.png'; // Reemplaza 'ruta_de_tu_imagen2.jpg' con la ruta real de tu imagen
+            let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
+            miCirculos.push(miCirculo);
+        }
+        flashScreen();
     }
-    flashScreen();
-}
+    
+    function createCirclesGroup2(x, y, radius = 60, speed = 8) {
+        for (let i = 0; i < directionsTriangulo.length; i++) {
+            let direction = directionsTriangulo[i];
+            let img = new Image();
+            img.src = 'img/Enemy.png'; // Reemplaza 'ruta_de_tu_imagen3.jpg' con la ruta real de tu imagen
+            let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
+            miCirculos.push(miCirculo);
+        }
+        flashScreen();
+    }
+    
+    function createCirclesGroup3(x, y, radius = 30, speed = 8) {
+        for (let i = 0; i < directionsHexagono.length; i++) {
+            let direction = directionsHexagono[i];
+            let img = new Image();
+            img.src = 'img/Enemy4.png'; // Reemplaza 'ruta_de_tu_imagen4.jpg' con la ruta real de tu imagen
+            let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
+            miCirculos.push(miCirculo);
+        }
+        flashScreen();
+    }
+    
+    function createCirclesGroup4(x, y, radius = 30, speed = 8) {
+        for (let i = 0; i < directionsCuadrado.length; i++) {
+            let direction = directionsCuadrado[i];
+            let img = new Image();
+            img.src = 'img/Enemy6.png'; // Reemplaza 'ruta_de_tu_imagen4.jpg' con la ruta real de tu imagen
+            let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
+            miCirculos.push(miCirculo);
+        }
+        flashScreen();
+    }
 
-function createCirclesGroup2(x, y, radius = 60, speed = 8) {
-    for (let i = 0; i < directionsTriangulo.length; i++) {
-        let direction = directionsTriangulo[i];
-        let img = new Image();
-        img.src = 'img/Enemy.png'; // Reemplaza 'ruta_de_tu_imagen3.jpg' con la ruta real de tu imagen
-        let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
-        miCirculos.push(miCirculo);
-    }
-    flashScreen();
-}
 
-function createCirclesGroup3(x, y, radius = 30, speed = 8) {
-    for (let i = 0; i < directionsHexagono.length; i++) {
-        let direction = directionsHexagono[i];
-        let img = new Image();
-        img.src = 'img/Enemy.png'; // Reemplaza 'ruta_de_tu_imagen4.jpg' con la ruta real de tu imagen
-        let miCirculo = new Circle(x, y, radius, "red", speed, direction.dx, direction.dy, img);
-        miCirculos.push(miCirculo);
-    }
-    flashScreen();
+function createSquare() {
+    const x = Math.random() * (window_width - 25);
+    const y = Math.random() * (window_height - 25);
+    const img = new Image();
+    img.src = 'img/cube.png'; // Ruta de la imagen del cuadrado
+    const square = new Square(x, y, 50, img);
+    miCuadrados.push(square);
 }
 
 function initializeCircles() {
-    const offset = 50;
-    const offset1 = 100;
-    setTimeout(() => {
-        createCirclesGroup1(offset, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup1(window_width - offset, offset); // Esquina superior derecha
-    }, 1 * intervaloAparicion);
-    createCirclesGroup2(window_width / 2, window_height / 2); // Medio
-    setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 2), 1 * intervaloAparicion); // Izquierda
-    setTimeout(() => createCirclesGroup2(3 * window_width / 4, window_height / 2), 2 * intervaloAparicion); // Derecha
-    // Crear grupos en las esquinas movidos un poco hacia adentro
-
+    const offset = 100;
+    const offset1 = 200;
     setTimeout(() => {
         createCirclesGroup2(offset, window_height - offset); // Esquina inferior izquierda
         createCirclesGroup2(window_width - offset, offset); // Esquina superior derecha
+    }, 1 * intervaloAparicion);
+    createCirclesGroup(window_width / 2, window_height / 2); // Medio
+    setTimeout(() => createCirclesGroup(window_width / 4, window_height / 2), 1 * intervaloAparicion); // Izquierda
+    setTimeout(() => createCirclesGroup(3 * window_width / 4, window_height / 2), 2 * intervaloAparicion); // Derecha
+
+    setTimeout(() => {
+        createCirclesGroup1(offset, window_height - offset); // Esquina inferior izquierda
+        createCirclesGroup1(window_width - offset, offset); // Esquina superior derecha
     }, 3 * intervaloAparicion);
     setTimeout(() => {
-        createCirclesGroup2(offset, offset); // Esquina superior izquierda
-        createCirclesGroup2(window_width - offset, window_height - offset); // Esquina inferior derecha
+        createCirclesGroup4(offset, offset); // Esquina superior izquierda
+        createCirclesGroup4(window_width - offset, window_height - offset); // Esquina inferior derecha
     }, 4 * intervaloAparicion);
-    createCirclesGroup2(window_width / 2, window_height / 2); // Medio
+    createCirclesGroup(window_width / 2, window_height / 2); // Medio
     setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 2), 5 * intervaloAparicion); // Izquierda
     setTimeout(() => createCirclesGroup2(3 * window_width / 4, window_height / 2), 6 * intervaloAparicion); // Derecha
 
     // Crear grupos en las esquinas movidos un poco hacia adentro
 
     setTimeout(() => {
-        createCirclesGroup(offset, window_height - offset); // Esquina inferior izquierda
-        createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+        createCirclesGroup2(offset, window_height - offset); // Esquina inferior izquierda
+        createCirclesGroup2(window_width - offset, offset); // Esquina superior derecha
     }, 7 * intervaloAparicion);
     setTimeout(() => {
         createCirclesGroup(offset, offset); // Esquina superior izquierda
@@ -290,13 +369,13 @@ function initializeCircles() {
     }, 8 * intervaloAparicion);
 
 setTimeout(() => {
-    createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
-    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+    createCirclesGroup3(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup3(window_width - offset, offset); // Esquina superior derecha
 }, 10 * intervaloAparicion);
 
 setTimeout(() => {
-    createCirclesGroup1(offset1, offset); // Esquina superior izquierda
-    createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
+    createCirclesGroup4(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup4(window_width - offset, window_height - offset); // Esquina inferior derecha
 }, 11 * intervaloAparicion);
 
 setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 12 * intervaloAparicion); // Medio
@@ -320,20 +399,20 @@ setTimeout(() => {
 }, 17 * intervaloAparicion);
 
 setTimeout(() => {
-    createCirclesGroup(offset1, offset); // Esquina superior izquierda
-    createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
+    createCirclesGroup3(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup3(window_width - offset, window_height - offset); // Esquina inferior derecha
 }, 18 * intervaloAparicion);
 
 setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 25 * intervaloAparicion); // Medio
 
 setTimeout(() => {
-    createCirclesGroup(offset, window_height - offset); // Esquina inferior izquierda
-    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+    createCirclesGroup3(offset, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup3(window_width - offset, offset); // Esquina superior derecha
 }, 19 * intervaloAparicion);
 
 setTimeout(() => {
-    createCirclesGroup(offset, offset); // Esquina superior izquierda
-    createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
+    createCirclesGroup4(offset, offset); // Esquina superior izquierda
+    createCirclesGroup4(window_width - offset, window_height - offset); // Esquina inferior derecha
 }, 20 * intervaloAparicion);
 
 setTimeout(() => createCirclesGroup(window_width / 4, window_height / 2), 21 * intervaloAparicion); // Izquierda
@@ -349,7 +428,8 @@ setTimeout(() => {
     createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
 }, 24 * intervaloAparicion);
 
-setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 26 * intervaloAparicion); // Medio
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), 25 * intervaloAparicion); // Medio
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), 26 * intervaloAparicion); // Medio
 
 setTimeout(() => {
     createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
@@ -360,6 +440,19 @@ setTimeout(() => {
     createCirclesGroup(offset1, offset); // Esquina superior izquierda
     createCirclesGroup(window_width - offset, window_height - offset); // Esquina inferior derecha
 }, 43 * intervaloAparicion1s);
+
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), intervaloAparicion * 44); 
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), intervaloAparicion * 44.1); 
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), intervaloAparicion * 44.2); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion *44.3); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 44.4); 
+setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 44.5); 
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 44.6); 
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 44.7); 
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 44.8); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 44.9); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 45); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 45.1); 
 
 setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 54 * intervaloAparicion1s); // Medio
 
@@ -381,22 +474,22 @@ setTimeout(() => {
 }, 60 * intervaloAparicion1s);
 
 setTimeout(() => {
-    createCirclesGroup1(offset1, offset); // Esquina superior izquierda
-    createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
+    createCirclesGroup2(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup2(window_width - offset, window_height - offset); // Esquina inferior derecha
 }, 61 * intervaloAparicion1s);
 
 setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 62 * intervaloAparicion1s); // Medio
 
 setTimeout(() => {
-    createCirclesGroup1(offset1, offset); // Esquina superior izquierda
-    createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
+    createCirclesGroup3(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup2(window_width - offset, window_height - offset); // Esquina inferior derecha
 }, 62 * intervaloAparicion1s);
 
 setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), 63 * intervaloAparicion1s); // Medio
 
 setTimeout(() => {
-    createCirclesGroup1(offset1, window_height - offset); // Esquina inferior izquierda
-    createCirclesGroup1(window_width - offset, offset); // Esquina superior derecha
+    createCirclesGroup2(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup3(window_width - offset, offset); // Esquina superior derecha
 }, 64 * intervaloAparicion1s);
 
 setTimeout(() => {
@@ -419,22 +512,91 @@ setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10)
 setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35); 
 setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35.1); 
 
-setTimeout(() => createCirclesGroup1(window_width / 3, window_height / 4), intervaloAparicion * 35.2); 
-setTimeout(() => createCirclesGroup1(window_width / 3, window_height / 4), intervaloAparicion * 35.3); 
-setTimeout(() => createCirclesGroup1(window_width / 4, window_height / 3), intervaloAparicion * 35.4); 
-setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 3, 15, 10), intervaloAparicion * 35.5); 
-setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35.6); 
-setTimeout(() => createCirclesGroup2(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35.7); 
-setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35.8); 
-setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 35.9); 
+setTimeout(() => createCirclesGroup1(window_width *.75, window_height / 2), intervaloAparicion * 35.2); 
+setTimeout(() => createCirclesGroup1(window_width *.75, window_height / 2), intervaloAparicion * 35.3); 
+setTimeout(() => createCirclesGroup1(window_width *.75, window_height / 2), intervaloAparicion * 35.4); 
+setTimeout(() => createCirclesGroup2(window_width *.75, window_height / 2, 15, 10), intervaloAparicion * 35.5); 
+setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 2, 15, 10), intervaloAparicion * 35.6); 
+setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 2, 15, 10), intervaloAparicion * 35.7); 
+setTimeout(() => createCirclesGroup3(window_width / 4, window_height / 2, 15, 10), intervaloAparicion * 35.8); 
+setTimeout(() => createCirclesGroup3(window_width / 4, window_height / 2, 15, 10), intervaloAparicion * 35.9); 
 setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 36); 
 setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 36.1); 
 setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 36.2); 
-setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 36.3); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 36.3); //72.6 segundos
+
+setTimeout(() => {
+    createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+}, 73 * intervaloAparicion1s);
+
+setTimeout(() => {
+    createCirclesGroup2(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup2(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 73.5 * intervaloAparicion1s);
+
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 74 * intervaloAparicion1s); // Medio
+
+setTimeout(() => {
+    createCirclesGroup(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup(window_width - offset, offset); // Esquina superior derecha
+}, 74.5 * intervaloAparicion1s);
+
+setTimeout(() => {
+    createCirclesGroup2(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup2(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 75 * intervaloAparicion1s);
+
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2), 62 * intervaloAparicion1s); // Medio
+
+setTimeout(() => {
+    createCirclesGroup3(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup2(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 75.5 * intervaloAparicion1s);
+
+setTimeout(() => createCirclesGroup1(window_width / 2, window_height / 2), 63 * intervaloAparicion1s); // Medio
+
+setTimeout(() => {
+    createCirclesGroup2(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup3(window_width - offset, offset); // Esquina superior derecha
+}, 76 * intervaloAparicion1s);
+
+setTimeout(() => {
+    createCirclesGroup1(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 76.5 * intervaloAparicion1s);
+
+setTimeout(() => createCirclesGroup1(window_width *.75, window_height / 2), intervaloAparicion * 39); 
+setTimeout(() => createCirclesGroup1(window_width *.75, window_height / 2), intervaloAparicion * 39.1); 
+setTimeout(() => createCirclesGroup1(window_width *.75, window_height / 2), intervaloAparicion * 39.2); 
+setTimeout(() => createCirclesGroup2(window_width *.75, window_height / 2, 15, 10), intervaloAparicion * 39.3); 
+
+setTimeout(() => {
+    createCirclesGroup2(offset1, window_height - offset); // Esquina inferior izquierda
+    createCirclesGroup3(window_width - offset, offset); // Esquina superior derecha
+}, 79 * intervaloAparicion1s);
+
+setTimeout(() => {
+    createCirclesGroup1(offset1, offset); // Esquina superior izquierda
+    createCirclesGroup1(window_width - offset, window_height - offset); // Esquina inferior derecha
+}, 79.5 * intervaloAparicion1s);
+
+setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 2, 15, 10), intervaloAparicion * 40); 
+setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 2, 15, 10), intervaloAparicion * 40.1); 
+setTimeout(() => createCirclesGroup3(window_width / 4, window_height / 2, 15, 10), intervaloAparicion * 40.2); 
+setTimeout(() => createCirclesGroup3(window_width / 4, window_height / 2, 15, 10), intervaloAparicion * 40.3); 
+
+setTimeout(() => createCirclesGroup3(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 40.4); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 40.5); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 40.6); 
+setTimeout(() => createCirclesGroup(window_width / 2, window_height / 2, 15, 10), intervaloAparicion * 40.7); 
 
 
 
 }
+
+// Inicializar cuadrados cada cierto tiempo
+setInterval(createSquare, 3000);
 
 initializeCircles();
 
@@ -448,6 +610,7 @@ canvas.addEventListener("click", function (event) {
         if (distanciaAlCentro <= circulo.radius) {
             miCirculos.splice(i, 1);
             ctx.clearRect(0, 0, window_width, window_height);
+            ctx.drawImage(imagen, 0, 0, window_width, window_height); // Redibujar la imagen de fondo
             miCirculos.forEach(circulo => circulo.draw(ctx));
             break;
         }
@@ -455,9 +618,11 @@ canvas.addEventListener("click", function (event) {
 });
 
 let updateCircles = function () {
+
     if (gameOver) {
         clearInterval(scoreInterval); // Detener el intervalo de puntaje cuando hay game over
         ctx.clearRect(0, 0, window_width, window_height);
+        ctx.drawImage(imagen, 0, 0, window_width, window_height); // Redibujar la imagen de fondo
         ctx.font = "50px Arial";
         ctx.fillStyle = "red";
         ctx.fillText("Game Over", window_width / 2 - 150, window_height / 2);
@@ -467,7 +632,7 @@ let updateCircles = function () {
         reloadButton.innerHTML = "TRY AGAIN";
         reloadButton.style.position = 'absolute';
         reloadButton.style.left = (window_width / 2 + 50) + 'px'; // Ajustar la posición según sea necesario
-        reloadButton.style.top = (window_height / 2 + 200) + 'px'; // Ajustar la posición según sea necesario
+        reloadButton.style.top = (window_height / 2 + 220) + 'px'; // Ajustar la posición según sea necesario
         reloadButton.style.padding = '10px 20px';
         reloadButton.style.fontSize = '20px';
         reloadButton.style.backgroundColor = 'white';
@@ -480,7 +645,33 @@ let updateCircles = function () {
         reloadButton.addEventListener('click', function () {
             location.reload();
         });
+        if (YouWin) {
+            clearInterval(scoreInterval); // Detener el intervalo de puntaje cuando hay game over
+        ctx.clearRect(0, 0, window_width, window_height);
+        ctx.drawImage(imagen, 0, 0, window_width, window_height); // Redibujar la imagen de fondo
+        ctx.font = "50px Arial";
+        ctx.fillStyle = "yellow";
+        ctx.fillText("You Win", window_width / 2 - 110, window_height / 2);
 
+        // Añadir el botón de recarga
+        const reloadButton = document.createElement('button');
+        reloadButton.innerHTML = "TRY AGAIN";
+        reloadButton.style.position = 'absolute';
+        reloadButton.style.left = (window_width / 2 + 50) + 'px'; // Ajustar la posición según sea necesario
+        reloadButton.style.top = (window_height / 2 + 220) + 'px'; // Ajustar la posición según sea necesario
+        reloadButton.style.padding = '10px 20px';
+        reloadButton.style.fontSize = '20px';
+        reloadButton.style.backgroundColor = 'white';
+        reloadButton.style.color = 'black';
+        reloadButton.style.border = 'none';
+        reloadButton.style.borderRadius = '5px';
+        reloadButton.style.cursor = 'pointer';
+        document.body.appendChild(reloadButton);
+
+        reloadButton.addEventListener('click', function () {
+            location.reload();
+        });
+        }
         // Actualizar el max score si es necesario
         if (score > maxScore) {
             maxScore = score;
@@ -493,6 +684,7 @@ let updateCircles = function () {
 
     requestAnimationFrame(updateCircles);
     ctx.clearRect(0, 0, window_width, window_height);
+    ctx.drawImage(imagen, 0, 0, window_width, window_height); // Redibujar la imagen de fondo
 
     drawGameTime(ctx); // Dibujar el tiempo de juego
     drawScore(ctx); // Dibujar el puntaje
@@ -513,6 +705,22 @@ let updateCircles = function () {
         }
     }
 
+    for (let i = miCuadrados.length - 1; i >= 0; i--) {
+        let square = miCuadrados[i];
+        square.update(ctx);
+
+        // Verificar colisión con el cursor
+        if (square.containsPoint(mouseX, mouseY)) {
+            score += 50;
+            miCuadrados.splice(i, 1);
+        }
+
+        // Eliminar el cuadrado si es completamente transparente
+        if (square.isFullyTransparent()) {
+            miCuadrados.splice(i, 1);
+        }
+    }
+
     miCirculos.forEach(circulo => circulo.draw(ctx));
 };
 
@@ -530,7 +738,6 @@ function stopAudio() {
 
 updateCircles();
 playAudio();  // Iniciar la música cuando se carga la página
-
 canvas.addEventListener("mousemove", xyMouse);
 
 canvas.addEventListener("click", function (event) {
@@ -540,14 +747,11 @@ canvas.addEventListener("click", function (event) {
     console.log(`Clic en X: ${mouseX}, Y: ${mouseY}`);
 });
 
-function getRandomColor() {
-    let letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
+/*function resetMaxScore() {
+    maxScore = 0;
+    localStorage.setItem('maxScore', maxScore);
 }
+resetMaxScore();*/
 
 function generateCircles() {
     const centerX = window_width / 2;
@@ -586,4 +790,3 @@ function flashScreen() {
         });
     }, 100);
 }
-

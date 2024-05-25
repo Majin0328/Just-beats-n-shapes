@@ -64,7 +64,24 @@ body {
     transition: transform 0.1s ease-out; /* Para la inclinación del cursor */
     box-shadow: 0 0 10px 5px rgba(0, 191, 255, 0.5); /* Estela de luz */
 }
+#canvas {
+  position: relative;
+  background-image: url(img\background1.jpg);
+  background-size: cover; /* Ajusta la imagen para cubrir todo el contenedor */
+  background-position: center; /* Centra la imagen */
+  
+}
 
+#canvas-container {
+  position: relative;
+  
+  width: 80%;
+  height: 80%;
+  background-image: url('img\background1.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
 .trail {
     position: absolute;
     width: 25px;
