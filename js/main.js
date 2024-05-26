@@ -95,6 +95,8 @@ function drawScore(context) {
     context.fillStyle = "#fff";
     context.fillText("Score: " + score, window_width - 150, 50);
     context.fillText("Max Score: " + maxScore, window_width - 150, 80);
+    context.fillText("Level: " + level, window_width - 150, 110); // Dibujar el nivel debajo del puntaje máximo
+
 }
 
 canvas.height = window_height;
@@ -122,6 +124,15 @@ function drawGameTime(context) {
     context.fillStyle = "#fff";
     context.fillText("Time " + seconds + "s", window_width - 150, 20);
 }
+// Función para incrementar el nivel
+function incrementLevel() {
+    setInterval(function() {
+        if (!gameOver) { // Solo incrementar el nivel si no hay game over
+            level += 1;
+        }
+    }, 10000); // Incrementa el nivel cada 10 segundos
+}
+incrementLevel();
 
 class Circle {
     constructor(x, y, radius, color, speed, dx, dy, image) {
