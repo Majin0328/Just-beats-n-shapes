@@ -348,12 +348,17 @@ function createSquare() {
 function initializeCircles() {
     const offset = 100;
     const offset1 = 200;
+
+    setTimeout(() => {
+    createCirclesGroup(window_width / 2, window_height / 2);
+    }, 10 * intervaloAparicion);
+
     setTimeout(() => {
         createCirclesGroup2(offset, window_height - offset); // Esquina inferior izquierda
         createCirclesGroup2(window_width - offset, offset); // Esquina superior derecha
-    }, 1 * intervaloAparicion);
-    createCirclesGroup(window_width / 2, window_height / 2); // Medio
-    setTimeout(() => createCirclesGroup(window_width / 4, window_height / 2), 1 * intervaloAparicion); // Izquierda
+    }, 2 * intervaloAparicion);
+    
+    setTimeout(() => createCirclesGroup(window_width / 4, window_height / 2), 2 * intervaloAparicion); // Izquierda
     setTimeout(() => createCirclesGroup(3 * window_width / 4, window_height / 2), 2 * intervaloAparicion); // Derecha
 
     setTimeout(() => {
@@ -364,7 +369,7 @@ function initializeCircles() {
         createCirclesGroup4(offset, offset); // Esquina superior izquierda
         createCirclesGroup4(window_width - offset, window_height - offset); // Esquina inferior derecha
     }, 4 * intervaloAparicion);
-    createCirclesGroup(window_width / 2, window_height / 2); // Medio
+    
     setTimeout(() => createCirclesGroup2(window_width / 4, window_height / 2), 5 * intervaloAparicion); // Izquierda
     setTimeout(() => createCirclesGroup2(3 * window_width / 4, window_height / 2), 6 * intervaloAparicion); // Derecha
 
